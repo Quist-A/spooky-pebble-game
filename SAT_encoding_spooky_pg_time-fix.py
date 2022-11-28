@@ -7,16 +7,16 @@ from z3 import *
 #
 # ===================
 
-T = 32  # maximal time (minus 1)
-n = 4 # number of vertices in DAG
+T = 32 # maximal time (minus 1)
+#n = 4 # number of vertices in DAG
 
 max_pebbles = 4 # maximal number of pebbles allowed
 max_spooks  = 1 # maximal number of spooks allowed
 
 """ Example DAG 0
-n=4
+n = 5
 output_vertices = [3]
-edges = [(0,1),(1,2),(2,3)]
+edges = [(0,1),(1,2),(2,3),(4,3)]
 """
 
 """ Example DAG 1
@@ -30,6 +30,7 @@ edges = [(0,1),(2,1),(2,3),(3,4),(4,5),(4,6),(7,6),(8,5),(9,3)] # list of edges 
 n = 9
 output_vertices = [7]
 edges = [(0,8),(1,8),(8,3),(2,3),(3,7),(6,7),(4,6),(5,6)]
+
 
 def gameFormula(T, n, output_vertices, edges, max_pebbles, max_spooks):
 	"""
@@ -86,13 +87,8 @@ def gameFormula(T, n, output_vertices, edges, max_pebbles, max_spooks):
 			s.add(Not(P[i][T-1]))
 
 
-
-
-
-
+	# move clauses
 	for t in range(T-1):
-
-		# move clauses
 
 		for child, father in edges:
 			# remove pebble condition
@@ -107,11 +103,9 @@ def gameFormula(T, n, output_vertices, edges, max_pebbles, max_spooks):
 			s.add(Implies(And(Not(P[father][t]),P[father][t+1]), 
 				And(P[child][t], P[child][t+1])  ))
 
-
+	# max one pebble or spook changes per timestep
 	for t in range(T-1):
 
-		# max one pebble or spook per time
-		
 		lst = []
 		for i in range(n):
 			lst.append((Xor(P[i][t],P[i][t+1]), 1))
@@ -123,10 +117,8 @@ def gameFormula(T, n, output_vertices, edges, max_pebbles, max_spooks):
 	# regularity clauses
 	# not necessarily needed
 
-
+	# cardinality clauses
 	for t in range(T):
-
-		# cardinality clauses
 
 		#s.set("sat.cardinality.solver", True)
 		# Some things might be updated to improve speed of PbLe function,
@@ -148,14 +140,18 @@ def gameFormula(T, n, output_vertices, edges, max_pebbles, max_spooks):
 	
 	return s
 
-s = gameSolver(T, n, output_vertices, edges, max_pebbles, max_spooks)
+s = gameFormula(T, n, output_vertices, edges, max_pebbles, max_spooks)
 res = s.check()
 print(res)
 
 if res == sat:
 	go = raw_input("Print model? y/n \n")
-	print(go)
+
 	if (go == "y"):
-		print(s.model())
+		solution = s.model()
+		#print(solution)
+		with open('output.txt', 'w+') as f:
+			for d in solution.decls():
+    				f.write("%s = %s \n" % (d.name(), solution[d]))
 
 

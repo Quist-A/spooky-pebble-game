@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[10]:
-
-
 import numpy as np
 
 def benchToDAG(filename, rename_vertices = True, print_progress = False):
@@ -113,6 +107,7 @@ def benchToDAG(filename, rename_vertices = True, print_progress = False):
     return n, output_vertices, edges
 
 
-filename = "s38584.bench"
-benchToDAG(filename)
-
+# EXAMPLE to run program
+#
+#filename = "s38584.bench"
+#benchToDAG(filename)

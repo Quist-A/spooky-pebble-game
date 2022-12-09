@@ -10,7 +10,7 @@ B = BoolSort()
 
 T = 10 # aantal tijdsstappen werkt nog niet...
 
-max_pebbles = 5
+max_pebbles = 150
 max_spooks = 0
 
 
@@ -38,7 +38,26 @@ print(time.time(),"Converted to edgelist")
 
 
 fp = Fixedpoint()
-fp.set(engine = 'bmc')  #datalog/spacer zijn snel bij UNSAT, bmc is snel bij SAT
+
+#print(fp.help())
+
+
+
+
+fp.set('engine' , 'spacer')  #datalog/spacer zijn snel bij UNSAT, bmc is snel bij SAT
+
+
+# print(fp.param_descrs())  # print parameter description set
+
+#fp.set(timeout=3000)  # timeout in ms
+
+fp.set('spacer.min_level', 200)
+
+fp.set('spacer.max_level', 300)
+
+
+
+fp.set('bmc.linear_unrolling_depth', 300)  # bound search depth of solver
 
 
 
@@ -129,9 +148,14 @@ for i in output_vertices:
 print(time.time(),"Setted relations and rules")
 
 print(time.time(),"Query starts...")
+
+#fp.timeout(100000) #timeout in milliseconds
+
 res = fp.query(f(final_clauses))
 print(time.time(),"Query finished")
 print(res)
+if res == unknown:
+	print(fp.reason_unknown())
 #if res == sat:
 	#ans = fp.get_answer()
 	#print(ans)

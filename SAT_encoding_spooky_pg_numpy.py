@@ -1,7 +1,7 @@
 from z3 import *
 from Convert_bench_file_to_DAG import *
 import time
-#import numpy as np
+import numpy as np
 
 
 # ===================
@@ -10,11 +10,11 @@ import time
 #
 # ===================
 
-T = 500 # maximal time (minus 1)
+T = 20 # maximal time (minus 1)
 #n = 4 # number of vertices in DAG
 
-max_pebbles = 500 # maximal number of pebbles allowed
-max_spooks  = 100 # maximal number of spooks allowed
+max_pebbles = 6 # maximal number of pebbles allowed
+max_spooks  = 0 # maximal number of spooks allowed
 
 """ Example DAG 0
 n = 5
@@ -26,7 +26,7 @@ edges = [(0,1),(1,2),(2,3),(4,3)]
 n = 10
 output_vertices = [1,5,6] # list of output vertices of DAG
 edges = [(0,1),(2,1),(2,3),(3,4),(4,5),(4,6),(7,6),(8,5),(9,3)] # list of edges of DAG
-# (i,j) means: i is a predecessor of j, i.o.w. i is a child of j
+# (i,j) means: i is a predecessor of j, i.o.w. i is a child of j -> 7-12-2022 reversed due to imported DAG format
 """
 
 """ Example DAG 2
@@ -53,20 +53,39 @@ def gameFormula(T, n, output_vertices, edges, max_pebbles, max_spooks, onePebble
 	# initialisation
 	#
 	# ===================
+	print(time.time()) 
+
+	X,Y = np.meshgrid(np.arange(T), np.arange(n))
+	p_s = np.full((n,T), "p")
+	s_s = np.full((n,T), "s")
+	bar_s = np.full((n,T), "_")
+
+	X = np.char.array(X)
+	Y = np.char.array(Y)
+
+
+	P = np.char.add(bar_s,X)
+	P = np.char.add(P,bar_s)
+	P = np.char.add(P,Y)
+
+	S = np.char.add(s_s,P)
+	P = np.char.add(p_s,P)
+	#print(P)
+	#print(S)
+	#print(S.reshape([n*T]).tolist())
+
+	listP = P.reshape([n*T]).tolist()
+	listS = S.reshape([n*T]).tolist()
+
+
+	listP = Bools(listP)
+	listS = Bools(listS)
+
+	S = np.array(listS).reshape(n,T)
+	P = np.array(listP).reshape(n,T)
+
+
 	print(time.time())
-	# matrix of pebbles
-	P = [ [ Bool("p_%s_%s" % (i, j)) for j in range(T) ] 
-	      for i in range(n) ]
-
-	# matrix of spooks
-	S = [ [ Bool("s_%s_%s" % (i, j)) for j in range(T) ] 
-	      for i in range(n) ]
-	print(time.time())
-	#print("print matrix:")
-	#pp(S)
-
-	#print([P[i][0] for i in range(n)])
-
 
 	# ===================
 	#
@@ -77,17 +96,17 @@ def gameFormula(T, n, output_vertices, edges, max_pebbles, max_spooks, onePebble
 	s = Solver()
 
 	# initial clauses
-	for i in range(n):
-		s.add(Not(P[i][0]),Not(S[i][0]))
+	s.add(Not(Or(P[:,0].tolist())))
+	s.add(Not(Or(S[:,0].tolist())))
 	
-
 	# final clauses
-	for i in range(n):
-		s.add(Not(S[i][T-1]))
-		if (i in output_vertices):
-			s.add(P[i][T-1])
-		else:
-			s.add(Not(P[i][T-1]))
+	s.add(np.take(P[:,T-1],output_vertices).tolist())
+	
+	non_output_vertices = np.delete(np.arange(n),output_vertices)
+	s.add(Not(Or(np.take(P[:,T-1],non_output_vertices).tolist())))
+
+	s.add(Not(Or(S[:,T-1].tolist())))
+
 	print(time.time())
 
 	# move clauses
@@ -115,22 +134,25 @@ def gameFormula(T, n, output_vertices, edges, max_pebbles, max_spooks, onePebble
 				lst.append((Xor(P[i][t],P[i][t+1]), 1))
 				lst.append((Xor(S[i][t],S[i][t+1]), 1))
 			s.add(PbLe(lst,1))
-	print(time.time())
 
+	print(time.time())
 
 	# regularity clauses
 	# not necessarily needed -> omitted
 
-	# cardinality clauses
+	# cardinality clauses  
+	# -> klein beetje trager dan for-loop variant, later versnellen met numba
 	for t in range(T):
-		
-		#s.set("sat.cardinality.solver", True)
-		# Some things might be updated to improve speed of PbLe function,
-		# see the stanford documentation of Z3.
-		s.add(PbLe([(P[i][t], 1) for i in range(n)], max_pebbles))
-		s.add(PbLe([(S[i][t], 1) for i in range(n)], max_spooks))
+		p_t = P[:,t].tolist()
+		p_t.append(max_pebbles)
+		s.add(AtMost(p_t))
+
+		s_t = S[:,t].tolist()
+		s_t.append(max_spooks)
+		s.add(AtMost(s_t))
 
 	print(time.time())
+	#print(s)
 
 	# ===================
 	#
@@ -146,9 +168,11 @@ def gameFormula(T, n, output_vertices, edges, max_pebbles, max_spooks, onePebble
 
 
 print(time.time())
-benchmarkname = "ISCAS85/c17"
+benchmarkname = "ISCAS85/c432"
 n, output_vertices, edges = benchToDAG("benchmarks/"+benchmarkname+".bench")
-print(n)
+#print("Vertices",n)
+#print("Edges",len(edges))
+#print("Output vertices", len(output_vertices))
 print(time.time())
 s = gameFormula(T, n, output_vertices, edges, max_pebbles, max_spooks, False)
 print(time.time())

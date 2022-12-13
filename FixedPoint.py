@@ -10,7 +10,7 @@ B = BoolSort()
 
 T = 10 # aantal tijdsstappen werkt nog niet...
 
-max_pebbles = 150
+max_pebbles = 100
 max_spooks = 0
 
 
@@ -42,8 +42,6 @@ fp = Fixedpoint()
 #print(fp.help())
 
 
-
-
 fp.set('engine' , 'spacer')  #datalog/spacer zijn snel bij UNSAT, bmc is snel bij SAT
 
 
@@ -51,13 +49,13 @@ fp.set('engine' , 'spacer')  #datalog/spacer zijn snel bij UNSAT, bmc is snel bi
 
 #fp.set(timeout=3000)  # timeout in ms
 
-fp.set('spacer.min_level', 200)
+#fp.set('spacer.min_level', 0)
 
-fp.set('spacer.max_level', 300)
+fp.set('spacer.max_level', 600)
 
 
 
-fp.set('bmc.linear_unrolling_depth', 300)  # bound search depth of solver
+#fp.set('bmc.linear_unrolling_depth', 600)  # bound search depth of solver
 
 
 
@@ -99,7 +97,10 @@ for vertex, childlist in enumerate(edgelist):
 	
 	
 	#print(prev_state, new_state)
-	fp.rule(f(new_state), [AtMost(S+[max_spooks]), AtMost(new_state[:n]+[max_pebbles]), f(prev_state)],
+	"""fp.rule(f(new_state), [AtMost(S+[max_spooks]), AtMost(new_state[:n]+[max_pebbles]), f(prev_state)],
+				name = "add_pebble_vertex"+str(vertex))
+"""
+	fp.rule(f(new_state), [AtMost(new_state[:n]+[max_pebbles]), f(prev_state)],
 				name = "add_pebble_vertex"+str(vertex))
 
 	# remove pebble: 2 options
@@ -107,8 +108,12 @@ for vertex, childlist in enumerate(edgelist):
 	new_state[vertex] = False
 	prev_state[vertex] = True
 
-	fp.rule(f(new_state), [AtMost(S+[max_spooks]), AtMost(prev_state[:n]+[max_pebbles]), f(prev_state)], 
+	"""fp.rule(f(new_state), [AtMost(S+[max_spooks]), AtMost(prev_state[:n]+[max_pebbles]), f(prev_state)], 
 				name = "(1)remove_pebble_vertex"+str(vertex))
+"""
+	fp.rule(f(new_state), [AtMost(prev_state[:n]+[max_pebbles]), f(prev_state)], 
+				name = "(1)remove_pebble_vertex"+str(vertex))
+
 
 	#(2) change pebble into spook
 	new_state = P+S
@@ -117,12 +122,15 @@ for vertex, childlist in enumerate(edgelist):
 
 	prev_state = P+S
 	prev_state[vertex] = True
-	fp.rule(f(new_state), [AtMost(S+[True]+[max_spooks]), AtMost(P+[max_pebbles]), f(prev_state)],
+
+	"""fp.rule(f(new_state), [AtMost(S+[True]+[max_spooks]), AtMost(P+[max_pebbles]), f(prev_state)],
+				name = "(2)remove_pebble_vertex"+str(vertex))
+"""
+	fp.rule(f(new_state), [AtMost(S+[True]+[max_spooks]), f(prev_state)],
 				name = "(2)remove_pebble_vertex"+str(vertex))
 
-
 	# add spook
-	#not needed to be added
+	#not needed to be added -> see option (2) when removing pebble
 
 
 	# remove spook
@@ -132,7 +140,10 @@ for vertex, childlist in enumerate(edgelist):
 	prev_state = P+S
 	prev_state[vertex] = True
 
-	fp.rule(f(new_state), [AtMost(S+[max_spooks]), AtMost(P+[True]+[max_pebbles]), f(prev_state)],
+	"""fp.rule(f(new_state), [AtMost(S+[max_spooks]), AtMost(P+[True]+[max_pebbles]), f(prev_state)],
+				name = "remove_spook_vertex"+str(vertex))
+	"""
+	fp.rule(f(new_state), [AtMost(P+[True]+[max_pebbles]), f(prev_state)],
 				name = "remove_spook_vertex"+str(vertex))
 	
 #print(fp)

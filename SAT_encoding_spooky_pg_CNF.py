@@ -13,7 +13,11 @@ import numpy as np
 T = 50 # maximal time (minus 1)
 #n = 4 # number of vertices in DAG
 
+<<<<<<< HEAD
+max_pebbles = 100 # maximal number of pebbles allowed
+=======
 max_pebbles = 60 # maximal number of pebbles allowed
+>>>>>>> 17e99f2ab0da2de72b6947a4bf3d957b66f3f267
 max_spooks  = np.inf # maximal number of spooks allowed
 
 """ Example DAG 0
@@ -217,7 +221,11 @@ def gameFormula(T, n, output_vertices, edges, max_pebbles, max_spooks, onePebble
 
 
 print(time.time())
+<<<<<<< HEAD
+benchmarkname = "ISCAS85/c1908"
+=======
 benchmarkname = "ISCAS85/c432"
+>>>>>>> 17e99f2ab0da2de72b6947a4bf3d957b66f3f267
 n, output_vertices, edges = benchToDAG("benchmarks/"+benchmarkname+".bench")
 #print("Vertices",n)
 #print("Edges",len(edges))
@@ -252,5 +260,4 @@ if res == sat:
 		with open('output.txt', 'w+') as f:
 			for d in solution.decls():
     				f.write("%s = %s \n" % (d.name(), solution[d]))
-
 

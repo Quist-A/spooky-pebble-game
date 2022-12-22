@@ -28,3 +28,5 @@ The SAT_encoding_spooky_pg_....py files are simulators of the spooky pebble game
 The FixedPoint.py file is also a simulator of the spooky pebble game, but uses a FixedPoint solver. 
 
 The file Convert_bench_file_to_DAG.py is used to convert a .bench file from the benchmark folder to a DAG. This DAG can then be used as benchmark input for the spooky pebble game simulators.
+
+The files bmc.py and pebble_bmc.py are a separate bmc solver for the spooky pebble game problem. This solver tries to find a solution timestep by timestep. The current performance is pretty good when many pebbles are used.

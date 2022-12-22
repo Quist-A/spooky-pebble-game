@@ -28,12 +28,14 @@ def benchToDAG(filename, rename_vertices = True, print_progress = False):
     input_vertices = [] # not necessarily needed for spooky pebble game solver
     output_vertices = []
     edges = []
-    #vertices = []
+    vertices = []
 
     for linenr in range(len(data)):  # check input file line by line
         if (data[linenr][:5] == 'INPUT'):
             # line defines new input vertex
-            input_vertices.append(linenr)
+            input_vertex = data[linenr][6:-1]
+            input_vertices.append(input_vertex)
+            vertices.append(input_vertex)
         else:
             
             if (data[linenr][:1] == 'G' or data[linenr][:1] == 'I' or data[linenr][:1] == 'g'):  
@@ -43,7 +45,7 @@ def benchToDAG(filename, rename_vertices = True, print_progress = False):
 
                 start_vertex = split[0]  # gate
 
-                #vertices.append(start_vertex)
+                vertices.append(start_vertex)
 
                 start = split[1].index("(")
                 end = split[1].index(")")
@@ -52,12 +54,14 @@ def benchToDAG(filename, rename_vertices = True, print_progress = False):
                 for end_vertex in end_vertices:
                     edges.append((start_vertex,end_vertex))
 
-                    #vertices.append(end_vertex)
+                    vertices.append(end_vertex)
 
             else: 
                 if (data[linenr][:6] == 'OUTPUT'):
                     # line defines new output vertex
+                    output_vertex = data[linenr][7:-1]
                     output_vertices.append(data[linenr][7:-1])
+                    vertices.append(output_vertex)
                 else:
                     # if no regular input and no empty line nor comment line -> print error
                     if (data[linenr] != '' and data[linenr][0] != '#'): 
@@ -70,11 +74,12 @@ def benchToDAG(filename, rename_vertices = True, print_progress = False):
     
 
     # count total number of vertices
-    vertices = np.unique(edges, return_inverse=True)  # remove duplicate vertices
+    vertices = np.unique(vertices, return_inverse=True)  # remove duplicate vertices
     n = len(vertices[0])  # total number of vertices
     
 
-    
+
+
     # convert vertex numbers in edges from string labels to integer labels
     
     if (rename_vertices):
@@ -82,14 +87,28 @@ def benchToDAG(filename, rename_vertices = True, print_progress = False):
         if print_progress:
             print("Renaming vertices...")
             
-        # convert vertex numbers in edges
-        edges = vertices[1].reshape([len(edges),2])
+        
 
         dictionary = vertices[0]  
         # dictionary of values from string to integer: 
         # string at second index -> replace by integer 1
         # string at 15th index   -> replace by integer 14
         # etc etc
+        # NOTE: dictionary is of type list to guarantee preserved order in for-loops
+
+        # convert vertex numbers in edges
+	nr_of_edges = len(edges)
+	edges = np.array(edges).reshape(2*nr_of_edges)
+	for j,x in enumerate(dictionary):
+            edges[edges == x] = j
+	edges = np.array(edges, dtype=int).reshape([nr_of_edges,2]) # convert array type from strings to integers
+
+
+        # convert vertex numbers of input vertices
+	input_vertices = np.array(input_vertices)
+        for j,x in enumerate(dictionary):
+            input_vertices[input_vertices == x] = j
+        input_vertices = np.array(input_vertices, dtype=int) # convert array type from strings to integers
 
 
         # convert vertex numbers of output vertices
@@ -109,5 +128,5 @@ def benchToDAG(filename, rename_vertices = True, print_progress = False):
 
 # EXAMPLE to run program
 #
-#filename = "s38584.bench"
-#benchToDAG(filename)
+#benchmarkname = "c432"
+#print(benchToDAG("benchmarks/ISCAS85/"+benchmarkname+".bench",print_progress=True))

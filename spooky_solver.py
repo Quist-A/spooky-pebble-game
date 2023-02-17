@@ -68,7 +68,7 @@ for i,benchmarkname in enumerate(shortrun_benchmarknames):
 				try:
 					# try to find solution for given parameters
 					(pebbles_used,spooks_used,count,seqT),(opt_pebbles_used,opt_spooks_used,opt_count,opt_seqT),runtime = bmc2.spooky_solver(DAG,benchmarkname,max_pebbles,max_spooks,Twait,9**seed)
-				except TimeoutException2:
+				except:
 					continue
 				else:
 					# reset alarm
@@ -94,9 +94,9 @@ for i,benchmarkname in enumerate(shortrun_benchmarknames):
 #
 #============================================
 
-longrun_benchmarknames = ["c6288","c7552"]
+longrun_benchmarknames = ["c3540","5315","c6288","c7552"]
 
-nodes = [979,944]
+nodes = [830,1089,979,988]
 
 Twait = 60  # maximal runtime per bmc iteration
 Tmax = 60*8 # maximal runtime of SAT solver
@@ -136,7 +136,7 @@ for i,benchmarkname in enumerate(longrun_benchmarknames):
 				try:
 					# try to find solution for given parameters
 					(pebbles_used,spooks_used,count,seqT),(opt_pebbles_used,opt_spooks_used,opt_count,opt_seqT),runtime = bmc2.spooky_solver(DAG,benchmarkname,max_pebbles,max_spooks,Twait,9**seed)
-				except TimeoutException2:
+				except:
 					continue
 				else:
 					# reset alarm

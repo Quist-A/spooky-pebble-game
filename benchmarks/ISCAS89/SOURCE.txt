@@ -1,2 +1,0 @@
-Benchmark circuits downloaded from https://people.engr.ncsu.edu/brglez/CBL/benchmarks/ISCAS89/
-December 5th, 2022

@@ -92,6 +92,42 @@ def plotParetoFronts(benchmarknames):
 	plt.close()
 	return
 
+
+def plotParetoFrontsLargeBM(benchmarknames):
+	fig = plt.figure(figsize=(8,5))
+	nrows=2
+	ncols=2
+	#fig2 = plt.figure(figsize=(10,15))
+
+
+	for i, benchmarkname in enumerate(benchmarknames):
+		try:
+			solutions = import_data("final_results/Appendix_results/"+benchmarkname+"_results_new_Tmax=2m_Twait=15s")
+		except:
+			solutions = import_data("final_results/Appendix_results/"+benchmarkname+"_results_new_Tmax=8m_Twait=60s")
+		seqTime, pebbles, spooks, runtimes, pebble_constr, spook_constr = convertSolutions(solutions)
+		
+		ax = fig.add_subplot(nrows,ncols, i+1)
+		ax.set_ylabel('sequential time')
+		ax.set_xlabel('pebbles')
+
+
+		xdata = pebbles
+		ydata = seqTime
+
+		scatterplot = ax.scatter(xdata, ydata, c = spooks, cmap='viridis',s=10)
+
+		ax.set_title(benchmarkname)
+
+		plt.colorbar(scatterplot, label='spooks')
+		
+		
+	fig.tight_layout()
+	plt.savefig("final_results/images/ParetoFrontsBenchmarksAppendix.pdf")
+	#plt.show()
+	plt.close()
+	return
+
 def plotConstraintRuntimes(benchmarknames):
 	fig = plt.figure(figsize=(8,12))
 	nrows=5
@@ -135,8 +171,57 @@ def plotConstraintRuntimes(benchmarknames):
 	return
 
 
+def plotConstraintRuntimesLargeBM(benchmarknames):
+	fig = plt.figure(figsize=(8,5))
+	nrows=2
+	ncols=2
+
+	for i, benchmarkname in enumerate(benchmarknames):
+		try:
+			solutions = import_data("final_results/Appendix_results/"+benchmarkname+"_results_new_Tmax=2m_Twait=15s")
+		except:
+			solutions = import_data("final_results/Appendix_results/"+benchmarkname+"_results_new_Tmax=8m_Twait=60s")
+		seqTime, pebbles, spooks, runtimes, pebble_constr, spook_constr = convertSolutions(solutions)
+		
+		ax = fig.add_subplot(nrows,ncols, i+1)
+		ax.set_ylabel('runtime (seconds)')
+		ax.set_xlabel('pebbles constraint')
+
+
+		xdata = pebble_constr
+		ydata = runtimes
+		zdata = spook_constr
+
+		xdata = np.array(xdata)
+
+		scatterplot = ax.scatter(xdata, ydata, c = zdata, cmap='viridis', s = 10, norm=clrs.PowerNorm(gamma=1./3.5))
+		#label = z)#,label="x")
+		#norm=clrs.BoundaryNorm([0,1,int(max(spook_constr)/20),int(max(spook_constr)/10),int(max(spook_constr)/5), max(spook_constr)],256),#norm=clrs.LogNorm())# norm=clrs.PowerNorm(gamma=1./3.5))
+		if benchmarkname == "c3540": xdata[xdata == 806] = 830  # fix due to small data error
+		ax.set_xlim([min(xdata)-1,max(xdata[xdata<max(xdata)])+1])
+
+		ax.set_title(benchmarkname)
+
+		plt.colorbar(scatterplot, label='spooks constraint')
+		#ax.legend()
+		
+		
+
+	fig.tight_layout()
+	plt.savefig("final_results/images/ConstraintRuntimesBenchmarksAppendix.pdf")
+	#plt.show()
+	plt.close()
+	return
+
+# plot benchmarks results
 benchmarknames = ["c432","c499","c880","c1355","c1908","c2670","c3540","c5315","c6288","c7552"]
 plotParetoFronts(benchmarknames)
 plotConstraintRuntimes(benchmarknames)
+
+
+# plot large benchmarks results
+benchmarknames = ["c3540","c5315","c6288","c7552"]
+plotParetoFrontsLargeBM(benchmarknames)
+plotConstraintRuntimesLargeBM(benchmarknames)
 
 

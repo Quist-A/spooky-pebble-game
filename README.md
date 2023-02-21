@@ -12,7 +12,7 @@ This repository belongs to the paper 'Optimizing Quantum Space using Spooky Pebb
 virtualenv venv\
 source venv/bin/activate
 
-#clone submodules
+#clone submodules\
 git submodule init\
 git submodule update
 

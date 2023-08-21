@@ -26,13 +26,14 @@ make install
 
 ## Overview of files
 
-The file spooky_solver.py is the file to run the spooky solver to find fronts as shown in the paper. \
+The file ParetoFrontSearcher.py is the file to run the spooky solver to find fronts as shown in the paper. \
 The file plotResults.py plots the results of the solver.
 
 The file Convert_bench_file_to_DAG.py is used to convert a .bench file from the benchmark folder to a DAG. This DAG can then be used as benchmark input for the spooky pebble game simulators.
 
-The file bmc2.py is the actual bmc solver of the spooky pebble game. This solver tries to find a solution timestep by timestep. The current performance is pretty good when many pebbles are used.
+The file gameSolver.py is the actual bmc solver of the spooky pebble game. This solver tries to find a solution timestep by timestep. The current performance is pretty good when many pebbles are used.
 
-The file pebble_bmc2.py provide setups for the bmc solver for the spooky pebble game problem. 
+The file bmcFormula.py provide setups for the bmc solver for the spooky pebble game problem. \
+The file solutionOptimizer.py provides an optimizer to reduce pebbles, spooks and number of moves for a game solution found by the gameSolver.
 
 

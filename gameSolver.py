@@ -7,6 +7,7 @@ Changed by Arend-Jan Quist
 import time
 from z3 import *
 from bmcFormula import *
+from solutionOptimizer import optimize_states, check_solution 
 
 
 index = 0  # index to enumerate fresh variables
@@ -37,7 +38,7 @@ def edges2edgelist(n,edges):
         edgelist[child].append(father)
     return edgelist
 
-def bmc(init, trans, goal, xs, xns, n, edges, benchmarkname, max_pebbles, max_spooks, Twait = 15, seed = 0, verbose = True):
+def bmc(init, trans, goal, xs, xns, n, edges, benchmarkname, max_pebbles, max_spooks, Twait = 7, seed = 0, verbose = True):
     """
     BMC solver for spooky pebble game.
 
@@ -74,9 +75,9 @@ def bmc(init, trans, goal, xs, xns, n, edges, benchmarkname, max_pebbles, max_sp
         if verbose:
             print("iteration ", count)
         
-        if check[count]:
+        if check[count]:  # check whether this count must be searched
             q = freshq(count, BoolSort()) 
-            s.add(Or(Not(q),goal))  #s.add(Implies(q, goal))  # q implies goal
+            s.add(Or(Not(q),goal))   # q implies goal
             
             res = solve(s,q,count,timeout,check)  # run SAT solver
             if verbose:
@@ -109,6 +110,8 @@ def bmc(init, trans, goal, xs, xns, n, edges, benchmarkname, max_pebbles, max_sp
                 else:
                     return (pebbles_used,spooks_used,count,seqT),(opt_pebbles_used,opt_spooks_used,count,opt_seqT)
         
+
+
         # add counter and set variable index to 0
         count += 1
         global index
@@ -139,65 +142,19 @@ def bmc(init, trans, goal, xs, xns, n, edges, benchmarkname, max_pebbles, max_sp
     else:
         return (0,0,0,0),(0,0,0,0)
 
-
-def check_solution(states,edges,n,count):
-    # check solution for errors
-
-                childedgelist = []
-                for i in range(n):
-                    childedgelist.append([])
-                
-                for child,father in edges:
-                    childedgelist[child].append(father)
-                    
-                
-                # check validity of solution
-                for time in range(count):
-                    for vertex in range(n):
-                        if (states[time][vertex] == 0 and states[time+1][vertex] == 1) or (states[time][vertex] == 1 and states[time+1][vertex] == 0) or (states[time][vertex] == 2 and states[time+1][vertex] == 1): # vertex pebbled or unpebbled or unspooked
-                            for child in childedgelist[vertex]:
-                                if states[time][child] != 1 or states[time+1][child] != 1:
-                                    print("ERROR: the optimized solution is not valid, child not pebbled", vertex,child,time)
-                                    print(states[time][vertex],states[time+1][vertex])
-                        if (states[time][vertex] == 2 and states[time+1][vertex] == 0):
-                            print("ERROR: the optimized solution is not valid, vertex unpebbled without spook",vertex,time)
-                        if (states[time][vertex] == 0 and states[time+1][vertex] == 2):
-                            print("WARNING: optimized solution has strange but valid behavior",vertex,time)
-                return
-    
-
-def optimize_states(states,n,edgelist,count):
+def solve(s,q,count,timeout,check):
     """
-    Optimize the sequential pebbling time of solution. Useless pebblings/unpebblings are detected and removed.
-    
-    Output: optimized solution in the form of a state matrix
+    Solve solution of pebble game for given game s with goal q.
     """
-    for time in range(count,0,-1):
-        for vertex in range(n):
-            if states[time][vertex] == 0 and states[time-1][vertex] == 1:
-                father_pebbled = False
-                
-                t = time
-                while not(father_pebbled):
-                    
-                    if states[t][vertex] == 2: # if pebble was placed to unspook
-                        break
-                        
-                    if states[t][vertex] == 0 and time != t and not(father_pebbled): # at this timestep the vertex was pebbled
-                        #print()
-                        for i in range(t,time,1): # remove the pebbles at the timestep
-                            states[i][vertex] = 0
-                        break
-                        
-                    for father in edgelist[vertex]: #check if a father is pebbled/unpebbled or unspooked during pebbling of vertex
-                        if (states[t][father] == 0 and states[t-1][father] == 1) or (states[t][father] == 1 and states[t-1][father] == 0) or (states[t][father] == 1 and states[t-1][father] == 2):
-                            father_pebbled = True
-                            break
-                            #print(vertex)
-
-                    t-=1 # go to previous timestep
-                    
-    return states
+    res = s.check(q)  # call SAT solver
+    if unknown == res: # run out of time
+        # disable check for next interations
+        for i in range(5):
+            try:
+                check[count+i] = False
+            except:
+                return 0
+    return res
     
 def model2states(solution, n, parT):
     """
@@ -262,20 +219,6 @@ def calc_solution_info(states,n, verbose = False):
     
     return seqT, pebbles_used, spooks_used       
     
-def solve(s,q,count,timeout,check):
-    """
-    Solve solution of pebble game for given game s with goal q.
-    """
-    res = s.check(q)  # call SAT solver
-    if unknown == res: # run out of time
-        # disable check for next interations
-        for i in range(5):
-            try:
-                check[count+i] = False
-            except:
-                return 0
-    return res
-    
 def spooky_solver(DAG,benchmarkname,max_pebbles,max_spooks,Twait = 15,seed = 0):
     """
     Setup and run solver for spooky pebble game
@@ -303,10 +246,10 @@ def run_bmc_manually():
     starttime = time.time()
 
     # Parameters
-    max_pebbles = 470
+    max_pebbles = 70
     max_spooks = 20 #np.inf
 
-    benchmarkname = "c6288"
+    benchmarkname = "c499"
     #n, output_vertices, edges = benchToDAG("benchmarks/ISCAS85/"+benchmarkname+".bench")
     DAG = dag("benchmarks/ISCAS85XMG/"+benchmarkname+".bench")
 

@@ -1,8 +1,8 @@
-import bmc2
+import gameSolver
 import numpy as np
 import signal
 
-from pebble_bmc2 import *
+from bmcFormula import *
 
 
 
@@ -50,7 +50,7 @@ for i,benchmarkname in enumerate(shortrun_benchmarknames):
 		# search for first solution
 		optimal_pebbles = np.inf
 		for seed in np.arange(Nseeds):
-			(pebbles_used,spooks_used,count,seqT),(opt_pebbles_used,opt_spooks_used,opt_count,opt_seqT),runtime = bmc2.spooky_solver(DAG,benchmarkname,max_pebbles,max_spooks,Twait,9**seed)
+			(pebbles_used,spooks_used,count,seqT),(opt_pebbles_used,opt_spooks_used,opt_count,opt_seqT),runtime = gameSolver.spooky_solver(DAG,benchmarkname,max_pebbles,max_spooks,Twait,9**seed)
 
 			print((max_pebbles,max_spooks),(pebbles_used,spooks_used,count,seqT),(opt_pebbles_used,opt_spooks_used,opt_count,opt_seqT),runtime)
 
@@ -67,7 +67,7 @@ for i,benchmarkname in enumerate(shortrun_benchmarknames):
 				signal.alarm(Tmax)
 				try:
 					# try to find solution for given parameters
-					(pebbles_used,spooks_used,count,seqT),(opt_pebbles_used,opt_spooks_used,opt_count,opt_seqT),runtime = bmc2.spooky_solver(DAG,benchmarkname,max_pebbles,max_spooks,Twait,9**seed)
+					(pebbles_used,spooks_used,count,seqT),(opt_pebbles_used,opt_spooks_used,opt_count,opt_seqT),runtime = gameSolver.spooky_solver(DAG,benchmarkname,max_pebbles,max_spooks,Twait,9**seed)
 				except:
 					continue
 				else:
@@ -118,7 +118,7 @@ for i,benchmarkname in enumerate(longrun_benchmarknames):
 		# search for first solution
 		optimal_pebbles = np.inf
 		for seed in np.arange(Nseeds):
-			(pebbles_used,spooks_used,count,seqT),(opt_pebbles_used,opt_spooks_used,opt_count,opt_seqT),runtime = bmc2.spooky_solver(DAG,benchmarkname,max_pebbles,max_spooks,Twait,9**seed)
+			(pebbles_used,spooks_used,count,seqT),(opt_pebbles_used,opt_spooks_used,opt_count,opt_seqT),runtime = gameSolver.spooky_solver(DAG,benchmarkname,max_pebbles,max_spooks,Twait,9**seed)
 
 			print((max_pebbles,max_spooks),(pebbles_used,spooks_used,count,seqT),(opt_pebbles_used,opt_spooks_used,opt_count,opt_seqT),runtime)
 
@@ -135,7 +135,7 @@ for i,benchmarkname in enumerate(longrun_benchmarknames):
 				signal.alarm(Tmax)
 				try:
 					# try to find solution for given parameters
-					(pebbles_used,spooks_used,count,seqT),(opt_pebbles_used,opt_spooks_used,opt_count,opt_seqT),runtime = bmc2.spooky_solver(DAG,benchmarkname,max_pebbles,max_spooks,Twait,9**seed)
+					(pebbles_used,spooks_used,count,seqT),(opt_pebbles_used,opt_spooks_used,opt_count,opt_seqT),runtime = gameSolver.spooky_solver(DAG,benchmarkname,max_pebbles,max_spooks,Twait,9**seed)
 				except:
 					continue
 				else:

@@ -1,5 +1,4 @@
 from z3 import *
-#import bmc
 
 from Convert_bench_file_to_DAG import *
 import time

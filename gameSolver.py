@@ -6,7 +6,7 @@ Changed by Arend-Jan Quist
 """
 import time
 from z3 import *
-from pebble_bmc2 import *
+from bmcFormula import *
 
 
 index = 0  # index to enumerate fresh variables
@@ -253,7 +253,7 @@ def calc_solution_info(states,n, verbose = False):
     pebbles_used = n-np.min(np.count_nonzero(states-1, axis = 1))
     spooks_used = n-np.min(np.count_nonzero(states-2, axis = 1))
     
-    if verbose:
+    #if verbose:
         #print("Sequential time:",seqT)
         #print("Maximal operations per parallel timestep:",np.max(np.count_nonzero(sum, axis = 1)))
         #print("Parallel time:",parT)

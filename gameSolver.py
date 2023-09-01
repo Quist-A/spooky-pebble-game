@@ -31,14 +31,17 @@ def edges2edgelist(n,edges):
     Convert list of edges to adjacency list per vertex.
     """
     edgelist = []
+    inv_edgelist = []
     for i in range(n):
         edgelist.append([])
+        inv_edgelist.append([])
     
     for father,child in edges:
         edgelist[child].append(father)
-    return edgelist
+        inv_edgelist[father].append(child)
+    return edgelist,inv_edgelist
 
-def bmc(init, trans, goal, xs, xns, n, edges, benchmarkname, max_pebbles, max_spooks, Twait = 7, seed = 0, verbose = True):
+def bmc(init, trans, goal, xs, xns, n, edges, benchmarkname, max_pebbles, max_spooks, Twait = 30, seed = 0, verbose = True):
     """
     BMC solver for spooky pebble game.
 
@@ -68,7 +71,7 @@ def bmc(init, trans, goal, xs, xns, n, edges, benchmarkname, max_pebbles, max_sp
     #solutions = []
     
 
-    edgelist = edges2edgelist(n,edges)
+    
         
     
     while count < max_time:
@@ -89,17 +92,21 @@ def bmc(init, trans, goal, xs, xns, n, edges, benchmarkname, max_pebbles, max_sp
                 # calculate info of solution
                 states = model2states(solution,n,count)
                 seqT, pebbles_used, spooks_used = calc_solution_info(states,n)
+                print(states) 
                 #print(states.tolist())  # for debugging
+                states1 = states.copy()
                 
                 if verbose:
                     print("solution: p ",pebbles_used,", s ",spooks_used, ", parT ",count,", seqT ", seqT)
                 
                 # optimize sequential pebbling time
-                states = optimize_states(states,n,edgelist,count)
+                edgelist,inv_edgelist = edges2edgelist(n,edges)
+                (states,count) = optimize_states(states,n,(edgelist,inv_edgelist),(max_pebbles,max_spooks),count)
                 
                 # check solution for errors, for debugging
-                #check_solution(states,edges,n,count)
-                #print(states) # for debugging
+                check_solution(states,edges,n,count)
+                print(states) # for debugging
+                #print((states1-states).tolist())
                 
                 opt_seqT, opt_pebbles_used, opt_spooks_used = calc_solution_info(states,n)
                 
@@ -210,6 +217,9 @@ def calc_solution_info(states,n, verbose = False):
     pebbles_used = n-np.min(np.count_nonzero(states-1, axis = 1))
     spooks_used = n-np.min(np.count_nonzero(states-2, axis = 1))
     
+    print("Pebbles:",(n-np.count_nonzero(states-1, axis = 1)))#.tolist())
+    print("Spooks: ",(n-np.count_nonzero(states-2, axis = 1)))#.tolist())
+    
     #if verbose:
         #print("Sequential time:",seqT)
         #print("Maximal operations per parallel timestep:",np.max(np.count_nonzero(sum, axis = 1)))
@@ -246,10 +256,10 @@ def run_bmc_manually():
     starttime = time.time()
 
     # Parameters
-    max_pebbles = 70
-    max_spooks = 20 #np.inf
+    max_pebbles = 80
+    max_spooks = np.inf
 
-    benchmarkname = "c499"
+    benchmarkname = "c1908"
     #n, output_vertices, edges = benchToDAG("benchmarks/ISCAS85/"+benchmarkname+".bench")
     DAG = dag("benchmarks/ISCAS85XMG/"+benchmarkname+".bench")
 
@@ -266,7 +276,7 @@ def run_bmc_manually():
     # create random DAG
     benchmarkname = "randomDAG"
     DAG.benchmarkname = benchmarkname
-    DAG.n = 30
+    DAG.n = 20
     n = DAG.n 
     p = 0.1
     output_vertices = [n-1]
@@ -276,15 +286,15 @@ def run_bmc_manually():
     input_vertices = np.arange(n)
     output_vertices = np.arange(n)
     for i in range(n):
-	    for j in range(i):
-		    if random_matrix[i][j] == True:
-			    edges.append((i,j))
-			    input_vertices = input_vertices[input_vertices != i]
-			    output_vertices = output_vertices[output_vertices != j]
+        for j in range(i):
+            if random_matrix[i][j] == True:
+                edges.append((i,j))
+                input_vertices = input_vertices[input_vertices != i]
+                output_vertices = output_vertices[output_vertices != j]
     DAG.output_vertices = output_vertices.tolist()
-
+    
     DAG.edges = edges
-
+    
     print("Number of edges:",len(edges))
     print("Number of input vertices:",len(input_vertices))
     print("Number of output vertices:",len(output_vertices))
@@ -318,6 +328,6 @@ def run_bmc_manually():
     return
 
 
-"""
+
 run_bmc_manually()
-"""
+

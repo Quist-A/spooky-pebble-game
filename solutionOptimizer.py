@@ -19,11 +19,11 @@ def check_solution(states,edges,n,count):
                 for child in childedgelist[vertex]:
                     if states[time][child] != 1 or states[time+1][child] != 1:
                         print("ERROR: the optimized solution is not valid, child not pebbled", vertex,child,time)
-                        print(states[time][vertex],states[time+1][vertex])
-        if (states[time][vertex] == 2 and states[time+1][vertex] == 0):
-            print("ERROR: the optimized solution is not valid, vertex unpebbled without spook",vertex,time)
-        if (states[time][vertex] == 0 and states[time+1][vertex] == 2):
-            print("WARNING: optimized solution has strange but valid behavior",vertex,time)
+                        print("Transition",states[time][vertex],states[time+1][vertex])
+            if (states[time][vertex] == 2 and states[time+1][vertex] == 0):
+                print("ERROR: the optimized solution is not valid, vertex unpebbled without spook",vertex,time)
+            if (states[time][vertex] == 0 and states[time+1][vertex] == 2):
+                print("WARNING: optimized solution has strange but valid behavior",vertex,time)
     return
     
 
@@ -61,16 +61,47 @@ def remove_useless_pebbling(states,n,edgelist,count):
                 
     return states
     
-def replace_spook_by_pebble_asap(states,n,edgelist,max_pebbles,count):
+def replace_spook_by_pebble_asap(states,n,inv_edgelist,max_pebbles,count):
     """
     Optimize the sequential pebbling time of solution. 
     Remove spooks as soon as their inputs are pebbled and there is a pebble available.
     
-    FUNCTION IS UNDER CONSTRUCTION...
-    
     Output: optimized solution in the form of a state matrix
     """
     pebbles_used = n-np.count_nonzero(states-1, axis = 1)
+    
+    for time in range(1,count+1,1):
+        if pebbles_used[time] < max_pebbles: # maximal number of pebbles not reached
+            for vertex in range(n):
+                if states[time][vertex] == 1 and states[time-1][vertex] == 2:  # unspooking move
+                    inputs = inv_edgelist[vertex]
+                    
+                    t = time-1
+                    while(t>0 and states[t][vertex] == 2):
+                        
+                        # what if states[t][vertex] == 0
+                        
+
+                        if pebbles_used[t]>=max_pebbles:
+                            break
+                        
+                        replace = True
+                        for inpt in inputs:
+                            if (states[t][inpt] != 1 or states[t-1][inpt] != 1): # input still pebbled
+                                replace = False
+                                break
+                        
+
+                                
+                        if replace:
+                            for x in range(t,time):
+                                if (states[x][vertex] != 1):
+                                    pebbles_used[x] += 1
+                                    states[x][vertex] = 1
+                                
+                            #print("asap replaced",t,vertex)
+                        t -= 1
+
     return states
     
 def delay_spook_placement(states,n,max_pebbles,count):
@@ -96,6 +127,96 @@ def delay_spook_placement(states,n,max_pebbles,count):
                     
                     if pebbles_used[time] >= max_pebbles:
                         break
+                    
+            #for vertex in delayable_vertices:
+            #    states[time][vertex] = 1
+    return states
+    
+def expedite_unpebbling(states,n,(edgelist,inv_edgelist),count):
+    """
+    Optimize the sequential pebbling time and number of pebbles of solution. 
+    Expedite pebble placements if enough inputs are already available and pebble is not used yet. 
+    
+    Output: optimized solution in the form of a state matrix
+    """
+    
+    for time in range(1,count+1,1):
+        for vertex in range(n):
+            if states[time][vertex] == 0 and states[time-1][vertex] == 1:  # unpebbling move
+                inputs = inv_edgelist[vertex]  #maybe change edgelist and inv_edgelist
+                outputs = edgelist[vertex]
+                
+                t = time-1
+                used_for_output = False
+                while(t>0 and states[t][vertex] == 1 and not(used_for_output)):
+                    
+                    # what if states[t][vertex] == 2
+                    
+                    expedite = True
+                    
+                    for inpt in inputs:
+                        if (states[t][inpt] != 1 or states[t-1][inpt] != 1): # input still pebbled
+                            expedite = False
+                            break
+                    for outpt in outputs:
+                        if ((states[t][outpt] != states[t+1][outpt] and not(states[t][outpt] == 1 and states[t+1][outpt] == 2)) or (states[t-1][outpt] != states[t][outpt] and not(states[t-1][outpt] == 1 and states[t][outpt] == 2))): #output (un)pebbled or unspooked
+                            expedite = False
+                            used_for_output = True
+                            break
+                            
+                    if expedite and states[t-1][vertex] != 2:
+                        for x in range(t,time):
+                            states[x][vertex] = 0  #expedite pebbling
+                        #print("expedited",t,vertex)
+                    t -= 1
+                
+                #if (states[t][vertex] == 2):
+                #    print(states[t-1][vertex],states[t][vertex],states[t+1][vertex])
+                #    states[t+1][vertex] = 1
+                    # it would be better to run remove_spook_asap instead on this vertex
+                    
+            #for vertex in delayable_vertices:
+            #    states[time][vertex] = 1
+    
+    return states
+
+def delay_pebble_placement(states,n,(edgelist,inv_edgelist),count):
+    """
+    Optimize the sequential pebbling time and number of pebbles of solution. 
+    Delay the pebble placements if enough inputs are still available and pebble is not used already. 
+    
+    Output: optimized solution in the form of a state matrix
+    """
+    
+    for time in range(count,0,-1):
+        for vertex in range(n):
+            if states[time][vertex] == 1 and states[time-1][vertex] == 0:  # pebbling move
+                inputs = inv_edgelist[vertex]  #maybe change edgelist and inv_edgelist
+                outputs = edgelist[vertex]
+                
+                t = time
+                used_for_output = False
+                while(t<count and states[t][vertex] == 1 and not(used_for_output)):
+                    
+                    # what if states[t][vertex] == 2  ==>  we can remove the spook
+                    
+                    delay = True
+                    
+                    for inpt in inputs:
+                        if (states[t][inpt] != 1 or states[t-1][inpt] != 1): # input still pebbled
+                            delay = False
+                            break
+                    for outpt in outputs:
+                        if ((states[t][outpt] != states[t+1][outpt] and not(states[t][outpt] == 1 and states[t+1][outpt] == 2)) or (states[t-1][outpt] != states[t][outpt] and not(states[t-1][outpt] == 1 and states[t][outpt] == 2))): #output (un)pebbled or unspooked
+                            delay = False
+                            used_for_output = True
+                            break
+                            
+                    if delay:
+                        for x in range(time,t):
+                            states[x][vertex] = 0  #delay pebbling
+                        #print("delayed",t,vertex)
+                    t += 1
                     
             #for vertex in delayable_vertices:
             #    states[time][vertex] = 1
@@ -207,11 +328,19 @@ def optimize_states(states,n,(edgelist,inv_edgelist),(max_pebbles,max_spooks),co
     
     Output: optimized solution in the form of a state matrix
     """
-    
-    (states,count) = par2seq(states,n,count)
-    states = remove_useless_spookings(states,n,inv_edgelist,count)
-    
-    states = remove_useless_pebbling(states,n,edgelist,count)
-    states = delay_spook_placement(states,n,max_pebbles,count)
+    for x in range(10):
+        (states,count) = par2seq(states,n,count)
+        print(count)
+        states = remove_useless_spookings(states,n,inv_edgelist,count)
+        
+        states = remove_useless_pebbling(states,n,edgelist,count)
+        states = delay_spook_placement(states,n,max_pebbles,count)
+        states = delay_pebble_placement(states,n,(edgelist,inv_edgelist),count)
+        
+        states = expedite_unpebbling(states,n,(edgelist,inv_edgelist),count)
+
+        states = replace_spook_by_pebble_asap(states,n,inv_edgelist,max_pebbles,count)
+
+
     
     return (states, count)

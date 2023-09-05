@@ -259,7 +259,7 @@ def run_bmc_manually():
     max_pebbles = 80
     max_spooks = np.inf
 
-    benchmarkname = "c1908"
+    benchmarkname = "c880"
     #n, output_vertices, edges = benchToDAG("benchmarks/ISCAS85/"+benchmarkname+".bench")
     DAG = dag("benchmarks/ISCAS85XMG/"+benchmarkname+".bench")
 

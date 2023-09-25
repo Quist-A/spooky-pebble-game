@@ -7,7 +7,7 @@ Changed by Arend-Jan Quist
 import time
 from z3 import *
 from bmcFormula import *
-from solutionOptimizer import optimize_states, check_solution 
+from solutionOptimizer import *
 
 
 index = 0  # index to enumerate fresh variables
@@ -41,7 +41,7 @@ def edges2edgelist(n,edges):
         inv_edgelist[father].append(child)
     return edgelist,inv_edgelist
 
-def bmc(init, trans, goal, xs, xns, n, edges, benchmarkname, max_pebbles, max_spooks, Twait = 30, seed = 0, verbose = True):
+def bmc(init, trans, goal, xs, xns, n, edges, benchmarkname, max_pebbles, max_spooks, Twait = 30, seed = 0, verbose = True, return_states = False):
     """
     BMC solver for spooky pebble game.
 
@@ -91,10 +91,12 @@ def bmc(init, trans, goal, xs, xns, n, edges, benchmarkname, max_pebbles, max_sp
                 
                 # calculate info of solution
                 states = model2states(solution,n,count)
+                if return_states:
+                    return (states, n, count, edges)
                 seqT, pebbles_used, spooks_used = calc_solution_info(states,n)
-                print(states) 
+                #print(states) # for debugging
                 #print(states.tolist())  # for debugging
-                states1 = states.copy()
+                #states1 = states.copy() # for debugging
                 
                 if verbose:
                     print("solution: p ",pebbles_used,", s ",spooks_used, ", parT ",count,", seqT ", seqT)
@@ -104,8 +106,8 @@ def bmc(init, trans, goal, xs, xns, n, edges, benchmarkname, max_pebbles, max_sp
                 (states,count) = optimize_states(states,n,(edgelist,inv_edgelist),(max_pebbles,max_spooks),count)
                 
                 # check solution for errors, for debugging
-                check_solution(states,edges,n,count)
-                print(states) # for debugging
+                #check_solution(states,edges,n,count)
+                #print(states) # for debugging
                 #print((states1-states).tolist())
                 
                 opt_seqT, opt_pebbles_used, opt_spooks_used = calc_solution_info(states,n)
@@ -143,7 +145,9 @@ def bmc(init, trans, goal, xs, xns, n, edges, benchmarkname, max_pebbles, max_sp
     
     
     #print(solutions)
-    if verbose:
+    if return_states:
+        return (np.array([[0]]), 0, 0, edges)
+    elif verbose:
         print("BMC solver: no solution found in max_time")
         return
     else:
@@ -216,9 +220,10 @@ def calc_solution_info(states,n, verbose = False):
 
     pebbles_used = n-np.min(np.count_nonzero(states-1, axis = 1))
     spooks_used = n-np.min(np.count_nonzero(states-2, axis = 1))
-    
-    print("Pebbles:",(n-np.count_nonzero(states-1, axis = 1)))#.tolist())
-    print("Spooks: ",(n-np.count_nonzero(states-2, axis = 1)))#.tolist())
+
+    if verbose:
+        print("Pebbles:",(n-np.count_nonzero(states-1, axis = 1)))#.tolist())
+        print("Spooks: ",(n-np.count_nonzero(states-2, axis = 1)))#.tolist())
     
     #if verbose:
         #print("Sequential time:",seqT)
@@ -229,21 +234,22 @@ def calc_solution_info(states,n, verbose = False):
     
     return seqT, pebbles_used, spooks_used       
     
-def spooky_solver(DAG,benchmarkname,max_pebbles,max_spooks,Twait = 15,seed = 0):
+def spooky_solver(DAG,benchmarkname,max_pebbles,max_spooks,Twait = 15,seed = 0,return_states = False):
     """
     Setup and run solver for spooky pebble game
     """
+    
     starttime = time.time()
-
+    
     init,trans,final,vars0,vars1 = setup_bmc_formulae(DAG,max_pebbles,max_spooks)
-
-    (pebbles_used,spooks_used,count,seqT),(opt_pebbles_used,opt_spooks_used,opt_count,opt_seqT) = bmc(init,trans,final,vars0,vars1,DAG.n,DAG.edges,benchmarkname,max_pebbles,max_spooks,Twait,seed,False)
+    
+    (states, n, count, edges) = bmc(init,trans,final,vars0,vars1,DAG.n,DAG.edges,benchmarkname,max_pebbles,max_spooks,Twait,seed,False,return_states)
 
     endtime = time.time()
     
     runtime = endtime-starttime
     
-    return (pebbles_used,spooks_used,count,seqT),(opt_pebbles_used,opt_spooks_used,opt_count,opt_seqT),runtime
+    return (states, n, count, edges),runtime
 
 
 
@@ -315,8 +321,14 @@ def run_bmc_manually():
     print("max spooks",max_spooks)
     print("benchmarkname",benchmarkname)
 
-    bmc(init,trans,final,vars0,vars1,DAG.n,DAG.edges,benchmarkname,max_pebbles,max_spooks)
-
+    (states, n, count, edges) = bmc(init,trans,final,vars0,vars1,DAG.n,DAG.edges,benchmarkname,max_pebbles,max_spooks,return_states=True)
+    
+    #optimize
+    edgelist,inv_edgelist = edges2edgelist(n,edges)
+    #(states,count) = minimize_pebbles(states,n,(edgelist,inv_edgelist),(max_pebbles,max_spooks),count)
+    #(states,count) = minimize_spooks(states,n,(edgelist,inv_edgelist),(max_pebbles,max_spooks),count)
+    (states,count) = optimize_states(states,n,(edgelist,inv_edgelist),(max_pebbles,max_spooks),count)
+    
     endtime = time.time()
     print("Solution found in ", endtime-starttime," seconds")
 
@@ -328,6 +340,7 @@ def run_bmc_manually():
     return
 
 
-
+"""
 run_bmc_manually()
+"""
 

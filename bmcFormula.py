@@ -19,7 +19,11 @@ def transition((P0,S0,P1,S1),max_pebbles,max_spooks,edges,n):
 	Define transition relation for spooky pebble game
 	"""
 	# cardinality conditions
-	card_pebbles = AtMost(P0+[max_pebbles])
+	if max_pebbles != np.inf:
+		card_pebbles = AtMost(P0+[max_pebbles])
+	else: 
+		card_pebbles = And()
+
 	if max_spooks != np.inf:
 		card_spooks = AtMost(S0+[max_spooks])
 	else: 
@@ -111,7 +115,6 @@ def setup_bmc_formulae(DAG,max_pebbles,max_spooks):
 	vars0: initial variables of bmc
 	vars1: output variables of transition relation
 	"""
-
 	n = DAG.n
 	output_vertices = DAG.output_vertices
 	edges = DAG.edges
@@ -127,11 +130,11 @@ def setup_bmc_formulae(DAG,max_pebbles,max_spooks):
 	# list of spooks
 	S1 = [ Bool("s1_%s" % (i)) for i in range(n) ]
 	vars1 = P1+S1
-
+	
 	# define initial and final clauses
 	init = And( [ Not(var0) for var0 in vars0 ] )
 	final = final_clauses((P0,S0,P1,S1),n, output_vertices)
-
+	
 	#trans = transitionIrreversible((P0,P1),max_pebbles,edges,n)  # transition relation for black (irreversible) pebble game
 	trans = transition((P0,S0,P1,S1),max_pebbles,max_spooks,edges,n)  # transition relation for spooky pebble game
 	

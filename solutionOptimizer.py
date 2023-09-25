@@ -143,7 +143,7 @@ def expedite_unpebbling(states,n,(edgelist,inv_edgelist),count):
     for time in range(1,count+1,1):
         for vertex in range(n):
             if states[time][vertex] == 0 and states[time-1][vertex] == 1:  # unpebbling move
-                inputs = inv_edgelist[vertex]  #maybe change edgelist and inv_edgelist
+                inputs = inv_edgelist[vertex]
                 outputs = edgelist[vertex]
                 
                 t = time-1
@@ -191,7 +191,7 @@ def delay_pebble_placement(states,n,(edgelist,inv_edgelist),count):
     for time in range(count,0,-1):
         for vertex in range(n):
             if states[time][vertex] == 1 and states[time-1][vertex] == 0:  # pebbling move
-                inputs = inv_edgelist[vertex]  #maybe change edgelist and inv_edgelist
+                inputs = inv_edgelist[vertex]
                 outputs = edgelist[vertex]
                 
                 t = time
@@ -336,7 +336,7 @@ def par2seq(states,n,count,(max_pebbles,max_spooks)):
     
     seqCount = len(seqStates)-1
     seqStates = np.array(seqStates)
-    print(seqStates)
+    #print([Solution] seqStates)
     return (seqStates,seqCount)
 
 def calc_solution_info_temp(states,n, verbose = True):
@@ -368,7 +368,9 @@ def calc_solution_info_temp(states,n, verbose = True):
         print("Number of spooks used: ",spooks_used)
     
     return seqT, pebbles_used, spooks_used 
-    
+
+
+
 def optimize_states(states,n,(edgelist,inv_edgelist),(max_pebbles,max_spooks),count):
     """
     Optimize the sequential pebbling time of solution. 
@@ -376,6 +378,24 @@ def optimize_states(states,n,(edgelist,inv_edgelist),(max_pebbles,max_spooks),co
     
     Output: optimized solution in the form of a state matrix
     """
+    states = remove_useless_pebbling(states,n,edgelist,count)
+    states = remove_useless_spookings(states,n,inv_edgelist,count)
+    
+    for x in range(10):
+
+        (states,count) = par2seq(states,n,count,(max_pebbles,max_spooks))
+
+        calc_solution_info_temp(states,n)
+                
+        states = delay_pebble_placement(states,n,(edgelist,inv_edgelist),count)           
+        states = expedite_unpebbling(states,n,(edgelist,inv_edgelist),count)
+
+        states = delay_spook_placement(states,n,max_pebbles,count)
+        states = replace_spook_by_pebble_asap(states,n,inv_edgelist,max_pebbles,count)
+        
+        states = remove_useless_spookings(states,n,inv_edgelist,count)
+        states = remove_useless_pebbling(states,n,edgelist,count)
+    
     for x in range(10):
         print("x=",x)
         (states,count) = par2seq(states,n,count,(max_pebbles,max_spooks))
@@ -385,21 +405,20 @@ def optimize_states(states,n,(edgelist,inv_edgelist),(max_pebbles,max_spooks),co
         
         states = remove_useless_spookings(states,n,inv_edgelist,count)
         
+        states = replace_spook_by_pebble_asap(states,n,inv_edgelist,max_pebbles,count)
+
         #calc_solution_info_temp(states,n)
-        
+        states = delay_pebble_placement(states,n,(edgelist,inv_edgelist),count)
+        #calc_solution_info_temp(states,n)
         states = remove_useless_pebbling(states,n,edgelist,count)
         #calc_solution_info_temp(states,n)
         states = delay_spook_placement(states,n,max_pebbles,count)
-        #calc_solution_info_temp(states,n)
-        states = delay_pebble_placement(states,n,(edgelist,inv_edgelist),count)
         #calc_solution_info_temp(states,n)
         
         states = expedite_unpebbling(states,n,(edgelist,inv_edgelist),count)
         #calc_solution_info_temp(states,n)
 
-        states = replace_spook_by_pebble_asap(states,n,inv_edgelist,max_pebbles,count)
-        #calc_solution_info_temp(states,n)
-
+        
 
     
     return (states, count)
